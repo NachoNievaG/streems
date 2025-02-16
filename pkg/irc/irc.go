@@ -1,17 +1,23 @@
 package irc
 
 import (
-	"fmt"
-	"github.com/gempir/go-twitch-irc/v4"
 	"log"
 	"os"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/gempir/go-twitch-irc/v4"
 )
 
+type PrivateMessageMsg struct {
+	User      string
+	UserColor string
+	Message   string
+}
 type Client struct {
 	Config
 	conn    *twitch.Client
-	msgChan chan string
+	MsgChan chan tea.Msg
 }
 type Config struct {
 	User    string
@@ -23,7 +29,7 @@ func New(c Config) Client {
 	var client *twitch.Client
 	irc := Client{
 		Config:  c,
-		msgChan: make(chan string),
+		MsgChan: make(chan tea.Msg, 200),
 	}
 	if c.Auth {
 		if c.User == "" {
@@ -39,14 +45,22 @@ func New(c Config) Client {
 	}
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		var t string
+		var msg PrivateMessageMsg
 		if c.User != "" && strings.Contains(message.Message, c.User) {
-			t = fmt.Sprintf("\033[97;41m [%s]%s:[white] %s]", message.User.Color, message.User.DisplayName, message.Message)
-
+			msg = PrivateMessageMsg{
+				UserColor: message.User.Color,
+				User:      message.User.DisplayName,
+				Message:   message.Message,
+			}
 		} else {
-			t = fmt.Sprintf("[%s]%s:[white] %s", message.User.Color, message.User.DisplayName, message.Message)
+			msg = PrivateMessageMsg{
+				UserColor: message.User.Color,
+				User:      message.User.DisplayName,
+				Message:   message.Message,
+			}
 		}
-		irc.msgChan <- t
+
+		irc.MsgChan <- msg
 	})
 
 	client.Join(c.Channel)
@@ -63,8 +77,4 @@ func New(c Config) Client {
 
 func (c *Client) Send(msg string) {
 	c.conn.Say(c.Channel, msg)
-}
-
-func (c *Client) Fetch() string {
-	return <-c.msgChan
 }

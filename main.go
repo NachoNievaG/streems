@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/NachoNievaG/streems/pkg/irc"
-	"github.com/NachoNievaG/streems/pkg/tui"
+	"github.com/NachoNievaG/streems/pkg/tui2"
 )
 
 func main() {
@@ -21,8 +21,8 @@ func main() {
 	}
 
 	c := irc.New(config)
-	tuiConfig := tui.Config{IRC: c}
+	conf := tui2.Config{IRC: c}
 
-	ui := tui.Build(tuiConfig)
-	ui.Start()
+	tui2.Run(conf)
+
 }
